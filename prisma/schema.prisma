@@ -44,8 +44,11 @@ model User {
   paymentsMade    Payment[] @relation("PaymentMaker") 
   BankDetails  BankDetails?
   logs             Log[]
+  webUserRights    webUserRight[]
 }
  
+
+
  model Log {
   id        Int         @id @default(autoincrement())
   userId    String
@@ -62,13 +65,44 @@ enum ActionTypes {
   LOGOUT
 }
 
+model webUserRight {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  Role      Role
+
+  MenuId    String
+  Menu      Menu     @relation(fields: [MenuId], references: [id])
+
+  SubMenuId String?
+  SubMenu   SubMenu? @relation(fields: [SubMenuId], references: [id])
+
+  isAccess  Boolean  @default(false)
+  canView   Boolean  @default(false)
+  canAdd    Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([Role])
+  @@index([MenuId])
+  @@index([SubMenuId])
+}
 
 model Menu {
   id        String   @id @default(uuid())
-  MenuName     String
+  MenuName  String
   Priority  Int  
   Icon      String?
-  SubMenus  SubMenu[]  
+
+  SubMenus       SubMenu[]  
+  webUserRights  webUserRight[]
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -76,16 +110,26 @@ model Menu {
 
 model SubMenu {
   id        String   @id @default(uuid())
-  SubMenuName     String  
+  SubMenuName String  
   MenuId    String
+  Menu      Menu     @relation(fields: [MenuId], references: [id])
+
   Priority  Int
   Icon      String?
   Routes    String
-  Menu      Menu     @relation(fields: [MenuId], references: [id])
+
+  webUserRights webUserRight[]
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+
+
+
+
+
 
 model BankDetails {
   id        String   @id @default(uuid())
