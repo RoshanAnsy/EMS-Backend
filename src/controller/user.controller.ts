@@ -6,7 +6,7 @@ dotenv.config();
 
 
 
-const logUserActivity=async (userId:number, action:'LOGIN' | 'LOGOUT')=>{
+const logUserActivity=async (userId:string, action:'LOGIN' | 'LOGOUT')=>{
     
     try{
         await prisma.log.create({
@@ -46,10 +46,10 @@ const getUserLogs=async (req:CustomRequest, res: Response):Promise<void> => {
                 logs: {
                     select: {
                         action: true,
-                        timestamp: true,
+                        createdAt: true,
                     },
                     orderBy: {
-                        timestamp: 'desc',
+                        createdAt: 'desc',
                     },
                 },
             },

@@ -4,7 +4,7 @@ import * as jwt from "jsonwebtoken";
 dotenv.config();
 
 export interface CustomRequest extends Request{
-    userId?:number,
+    userId?:string,
     email?:string
 }
 
@@ -45,7 +45,7 @@ const authorization = async (req: CustomRequest, res: Response, next: NextFuncti
 
         const decoded= jwt.verify(token, secret) as CustomJwtPayload;
         if(decoded){
-            req.userId = decoded.isUserExist.id;
+            req.userId = decoded.isUserExist.id.toString();
             req.email = decoded.isUserExist.email;
         }
         next();
