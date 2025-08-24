@@ -43,9 +43,26 @@ model User {
   paymentsReceived Payment[] @relation("PaymentReceiver")  
   paymentsMade    Payment[] @relation("PaymentMaker") 
   BankDetails  BankDetails?
+  logs             Log[]
 }
  
- 
+ model Log {
+  id        Int         @id @default(autoincrement())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  action    ActionTypes // "LOGIN" or "LOGOUT"
+  ipAddress String?     // optional: track from where user logged in
+  device    String?     // optional: track device/browser
+  createdAt DateTime    @default(now())
+}
+
+
+enum ActionTypes {
+  LOGIN
+  LOGOUT
+}
+
+
 model Menu {
   id        String   @id @default(uuid())
   MenuName     String
@@ -69,6 +86,7 @@ model SubMenu {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
 model BankDetails {
   id        String   @id @default(uuid())
   userId    String   @unique
