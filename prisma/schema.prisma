@@ -13,65 +13,147 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ActionTypes {
-  LOGIN
-  LOGOUT
-}
-
+ 
 enum Role {
-  USER
   ADMIN
+  VENDOR
 }
-
-enum Categories {
-  RESULT
-  JOB
-  ADMITCARD
-  ANSWERKEY
-  ADMISSION
-  SYLLABUS
-  CERTIFICATE
-}
+ 
 model User {
-  id        Int       @id @unique @default(autoincrement())
-  name      String
-  email     String    @unique
+  id        String   @id @default(uuid())
+  name      String  
+  email     String   @unique
   password  String
-  avatar    String?
-  role       Role       @default(USER)
   image     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  logs      Log[]
-  article   Article[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      Role
+  AdharNo String?  
+  PanNo    String?
+  MobileNo String?
+  EmergencyContactNo String?
+  PermanentAddress  String?
+  CurrentAddress  String?
+  isActive  Boolean  @default(true)
+  attendance Attendance[] @relation("UserAttendance")
+  task  Task[]  @relation("UserTask")
+  assignedTasks Task[] @relation("AssignedTasks")  // Add this
+  createdTasks  Task[] @relation("CreatedTasks")   // Add this
+  PaymentDetails  Payment[] @relation("UserPayment")
+  paymentsReceived Payment[] @relation("PaymentReceiver")  
+  paymentsMade    Payment[] @relation("PaymentMaker") 
+  BankDetails  BankDetails?
+}
+ 
+ 
+model Menu {
+  id        String   @id @default(uuid())
+  MenuName     String
+  Priority  Int  
+  Icon      String?
+  SubMenus  SubMenu[]  
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Log {
-  id        Int         @id @default(autoincrement())
-  userId    Int
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action    ActionTypes // "LOGIN" or "LOGOUT"
-  timestamp DateTime    @default(now())
+model SubMenu {
+  id        String   @id @default(uuid())
+  SubMenuName     String  
+  MenuId    String
+  Priority  Int
+  Icon      String?
+  Routes    String
+  Menu      Menu     @relation(fields: [MenuId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model BankDetails {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  bankName  String  
+  branch    String  
+  IFSCode  String  
+  accountNo String  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  user      User     @relation(fields: [userId], references: [id])
+}
+// New Payment model to track payment details
+model Payment {
+  id        String   @id @default(uuid())
+  UserId    String 
+  user      User     @relation("UserPayment", fields: [UserId], references: [id])
+  FixAmount  Int   // Fixed amount for the bill
+  VariableAmount Int   // Variable amount for the bill
+  totalAmount Int // Total amount paid (FixAmount + VariableAmount)
+  remark    String
+  fileUrl   String   // For payment proof document
+  PaidTo   String   
+  paidToUser User @relation("PaymentReceiver", fields: [PaidTo], references: [id])  // Add this relation
+  PaidBy   String   
+  paidByUser User @relation("PaymentMaker", fields: [PaidBy], references: [id]) 
+  paidAt    DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  status   BillStatus @default(NOT_INITIATED)
+  @@index([paidAt])
+} 
+
+
+// Enum for bill statuses
+enum BillStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+  NOT_INITIATED
+}
+ 
+model Attendance{
+  id        String   @id @default(uuid())
+  UserId    String
+  user      User     @relation("UserAttendance", fields: [UserId], references: [id])
+  PunchInTime   DateTime
+  PunchOutTime  DateTime
+  status    AttendanceStatus @default(ABSENT) // Enum for attendance status
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  @@index([UserId])
+}
+ 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+  HOLIDAY
 }
 
-model Article {
-  id          String        @id @default(uuid())
-  title       String        @unique @db.Text // Searchable field
-  thumbnail   String?        @db.Text
-  tags        String[]      @db.Text
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now()) @updatedAt
-  userId      Int
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  viewContent String  @db.Text
-  categories Categories
+model Task {
+  id        String   @id @default(uuid())
+  UserId    String
+  user      User     @relation("UserTask", fields: [UserId], references: [id])
+  title     String  
+  description String?
+  assignedTo String   
+  assignee   User     @relation("AssignedTasks", fields: [assignedTo], references: [id])  // Add this
+  assignedBy String   
+  assigner   User     @relation("CreatedTasks", fields: [assignedBy], references: [id]) 
+  dueDate   DateTime
+  status    TaskStatus @default(PENDING) // Enum for task status
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  @@index([assignedTo])
+  @@index([assignedBy])
 }
-
-// model ArticleView {
-//   id          String  @id @default(uuid())
-//   articleId   String  @unique
-//   article     Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
-//   viewContent String  @db.Text
-// }
-
-
+ 
+enum TaskStatus {
+  PENDING
+  INPROGRESS
+  COMPLETED
+  CANCELLED
+}
