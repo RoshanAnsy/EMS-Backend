@@ -6,6 +6,7 @@ import userRoute from "./routes/user.route"
 import AttendanceRouter from './routes/attendance.route';
 import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
+import { MenuRouter } from './routes/sidebar.routes';
 import cors from "cors"
 
 dotenv.config();
@@ -28,9 +29,11 @@ app.get('/',(req:Request,res:Response)=>{
     res.send("server is running");
 })
 app.use('/',AuthRoute);
+
 app.use("/",userRoute);
 app.use("/attendance",AttendanceRouter);
-// app.use("/",articlesRoute)
+app.use("/",MenuRouter);
+
 
 
 

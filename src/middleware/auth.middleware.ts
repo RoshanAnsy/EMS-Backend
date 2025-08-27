@@ -5,7 +5,8 @@ dotenv.config();
 
 export interface CustomRequest extends Request{
     userId?:string,
-    email?:string
+    email?:string,
+    role?:string,
 }
 
 interface CustomJwtPayload extends jwt.JwtPayload {
@@ -47,6 +48,7 @@ const authorization = async (req: CustomRequest, res: Response, next: NextFuncti
         if(decoded){
             req.userId = decoded.isUserExist.id.toString();
             req.email = decoded.isUserExist.email;
+            req.role = decoded.isUserExist.role;
         }
         next();
     } catch (error) {
