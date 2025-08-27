@@ -3,6 +3,7 @@ import express, { Response,Request } from 'express';
 import dotenv from "dotenv";
 import AuthRoute from "./routes/auth.route";
 import userRoute from "./routes/user.route"
+import AttendanceRouter from './routes/attendance.route';
 import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 import cors from "cors"
@@ -27,7 +28,8 @@ app.get('/',(req:Request,res:Response)=>{
     res.send("server is running");
 })
 app.use('/',AuthRoute);
-app.use("/",userRoute)
+app.use("/",userRoute);
+app.use("/attendance",AttendanceRouter);
 // app.use("/",articlesRoute)
 
 
