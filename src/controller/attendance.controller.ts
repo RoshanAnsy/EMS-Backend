@@ -110,7 +110,7 @@ export const markAttendance = async (req: CustomRequest, res: Response): Promise
             res.status(200).json({
                 success: true,
                 message: "Punch In Successful.",
-                data: newAttendance
+                // data: newAttendance
             });
 
         } else {
@@ -143,7 +143,7 @@ export const markAttendance = async (req: CustomRequest, res: Response): Promise
             res.status(200).json({
                 success: true,
                 message: "Punch Out Successful.",
-                data: updatedAttendance
+                // data: updatedAttendance
             });
         }
 
@@ -503,10 +503,6 @@ export const getAttendanceEnhanced = async (req: CustomRequest, res: Response): 
                 hasPrev: pageNum > 1,
                 isApproximate,
             },
-            meta: {
-                timezone: 'Asia/Kolkata',
-                dateFormat: 'DD/MM/YYYY, hh:mm:ss A',
-            }
         });
 
     } catch (error) {
