@@ -184,7 +184,9 @@ model Attendance{
   user      User     @relation("UserAttendance", fields: [UserId], references: [id])
   PunchInTime   DateTime
   PunchOutTime  DateTime
-  status    AttendanceStatus @default(ABSENT) // Enum for attendance status
+  status    AttendanceStatus @default(ABSENT)
+  PunchInLocation String?
+  punchOutLocation String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isActive  Boolean  @default(true)
