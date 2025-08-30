@@ -152,6 +152,7 @@ const login=async (req:Request,res:Response): Promise<void>=>{
             name:isUserExist.name,
             email:isUserExist.email,
             role:isUserExist.role,
+            id:isUserExist.id
         }
         
         //token generations

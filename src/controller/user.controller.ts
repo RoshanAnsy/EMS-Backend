@@ -154,4 +154,31 @@ const GetUser = async (req:CustomRequest,res:Response) => {
     }
 }
 
+export const UserList=async (req:Request,res:Response)=>{
+    try{
+        const users= await prisma.user.findMany({
+            select:{
+                id:true,
+                name:true,
+                email:true,
+                role:true,
+                
+                
+            }
+        });
+        res.status(200).json({
+            success: true,
+            message:"User list fetch successful",
+            users
+        });
+    }
+    catch(error){
+        res.status(500).json({
+            success: false,
+            message:"User list fetch failed",
+            error: error
+        });
+    }
+}
+
 export {getUserLogs,getAllUsers,logUserActivity,GetUser}

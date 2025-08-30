@@ -16,7 +16,12 @@ datasource db {
  
 enum Role {
   ADMIN
-  VENDOR
+  DIRECTOR 
+  HOS
+  AREAMANAGER
+  STATEHEAD
+  SALESOFFICER
+
 }
  
 model User {
@@ -44,7 +49,7 @@ model User {
   paymentsMade    Payment[] @relation("PaymentMaker") 
   BankDetails  BankDetails?
   logs             Log[]
-  webUserRights    webUserRight[]
+  
 }
  
 
@@ -67,16 +72,15 @@ enum ActionTypes {
 
 model webUserRight {
   id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  AddedBY    String?
+  
 
   Role      Role
 
   MenuId    String
-  Menu      Menu     @relation(fields: [MenuId], references: [id])
-
-  SubMenuId String?
-  SubMenu   SubMenu? @relation(fields: [SubMenuId], references: [id])
+  isAccessBy String // To specify if access is by Menu or SubMenu
+  SubMenuId String
+  SubMenu   SubMenu @relation(fields: [SubMenuId], references: [id])
 
   isAccess  Boolean  @default(false)
   canView   Boolean  @default(false)
@@ -88,10 +92,10 @@ model webUserRight {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
+
   @@index([Role])
-  @@index([MenuId])
   @@index([SubMenuId])
+  @@index([isAccessBy])
 }
 
 model Menu {
@@ -101,7 +105,7 @@ model Menu {
   Icon      String?
 
   SubMenus       SubMenu[]  
-  webUserRights  webUserRight[]
+ 
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
