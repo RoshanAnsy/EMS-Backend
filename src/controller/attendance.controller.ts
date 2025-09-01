@@ -438,6 +438,8 @@ export const getAttendanceEnhanced = async (req: CustomRequest, res: Response): 
             whereCondition
         );
 
+        
+
         // Fetch attendance data with optimized query
         const attendanceData = await prisma.attendance.findMany({
             where: whereCondition,
@@ -588,7 +590,7 @@ export const getUserAttendance = async (req: Request, res: Response): Promise<vo
       PunchInLocation: record.PunchInLocation,
       punchOutLocation: record.punchOutLocation,
       status: record.status,
-      isActive: record.isActive,
+    //   isActive: record.isActive,
     }));
 
     const totalPages = Math.ceil(totalRecords / limitNum);

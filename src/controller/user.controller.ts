@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import { CustomRequest } from "../middleware/auth.middleware";
 dotenv.config();
 
+import { getQueryParamAsString } from "../utils/queryUtils";
+import { QueryOptimizer } from "../utils/queryOptimize";
 
 
 const logUserActivity=async (userId:string, action:'LOGIN' | 'LOGOUT')=>{
@@ -81,22 +83,34 @@ const getUserLogs=async (req:CustomRequest, res: Response):Promise<void> => {
 const getAllUsers = async (req: Request, res: Response): Promise<void> => {
         
     try{
-        const {limit,skip}=req.query;
-    
-        const TotalSkip=Number(skip);
-        const TotalLimit=Number(limit);
+        // const {limit,skip}=req.query;
+
+        const page = getQueryParamAsString(req.query.page) ?? "1";
+        const limit = getQueryParamAsString(req.query.limit) ?? "10";
+
+        const { pageNum, limitNum, offset } = QueryOptimizer.getPaginationLimits(page, limit);
+        
+        const whereCondition = {
+            isActive: true
+        }
+        const { count: totalRecords, isApproximate } = await QueryOptimizer.getOptimizedCount(
+            prisma.user,
+            whereCondition
+        );
         const users = await prisma.user.findMany({
-            skip:TotalSkip,
-            take: TotalLimit,
-            orderBy: {
-                id: 'asc'
-            },
-            select:{
+            where: whereCondition,
+            select: {
                 id:true,
                 name:true,
                 email:true,
+                role:true,
+            },
+            skip: offset,
+            take: limitNum,
+            orderBy: {
+                id: 'asc'
             }
-        })
+        });
         if(!users){
             res.status(404).json({
                 success: false,
@@ -104,11 +118,21 @@ const getAllUsers = async (req: Request, res: Response): Promise<void> => {
             });
             return;
         }
+        const totalPages = Math.ceil(totalRecords / limitNum);
+
         res.status(200).json({
             message:"All user get successful",
             success:true,
-            users
-        })
+            data: users,
+            pagination: {
+                currentPage: pageNum,
+                totalPages,
+                totalRecords,
+                hasNext: pageNum < totalPages,
+                hasPrevious: pageNum > 1,
+                isApproximate,
+            },
+        });
     }
     catch(error){
         res.status(500).json({
@@ -154,4 +178,46 @@ const GetUser = async (req:CustomRequest,res:Response) => {
     }
 }
 
+// const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+        
+//     try{
+//         const {limit,skip}=req.query;
+    
+//         const TotalSkip=Number(skip);
+//         const TotalLimit=Number(limit);
+//         const users = await prisma.user.findMany({
+//             skip:TotalSkip,
+//             take: TotalLimit,
+//             orderBy: {
+//                 id: 'asc'
+//             },
+//             select:{
+//                 id:true,
+//                 name:true,
+//                 email:true,
+//             }
+//         })
+//         if(!users){
+//             res.status(404).json({
+//                 success: false,
+//                 error: "No users found"
+//             });
+//             return;
+//         }
+//         res.status(200).json({
+//             message:"All user get successful",
+//             success:true,
+//             users
+//         })
+//     }
+//     catch(error){
+//         res.status(500).json({
+//             success: false,
+//             message:"Failed to get users",
+//             error: `internal server error ${error}`
+//         });
+//     }
+    
+
+// }
 export {getUserLogs,getAllUsers,logUserActivity,GetUser}
