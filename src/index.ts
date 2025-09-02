@@ -14,7 +14,7 @@ const app = express();
 export const prisma=new PrismaClient();
 console.log("cors",process.env.ORIGIN as string);
 const corsOptions = {
-    origin:process.env.ORIGIN as string , // Allow requests only from this origin
+    origin:process.env.ORIGIN as string | '*' , // Allow requests only from this origin
     credentials: true, //access-control-allow-credentials:true
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }
