@@ -1,7 +1,7 @@
-import { Response } from "express";
-import { prisma } from "..";
-import { CustomRequest } from "../middleware/auth.middleware";
-import { Role } from "@prisma/client";
+// import { Response } from "express";
+// import { prisma } from "..";
+// import { CustomRequest } from "../middleware/auth.middleware";
+// import { Role } from "@prisma/client";
 
 // export const GetSideBar= async (req:CustomRequest,res:Response)=>{
 //     try {
@@ -61,37 +61,38 @@ import { Role } from "@prisma/client";
 
 
 
-export const addMenu= async (req:CustomRequest,res:Response)=>{
-    try {
-        const {menuName,priority,icon}=req.body;
-        if(!menuName || !priority){
-            res.status(400).json({
-                success: false,
-                message:"menuName and priority are required"
-            });
-            return;
-        }
-        const newMenu= await prisma.menu.create({
-            data:{
-                MenuName:menuName,
-                Priority:priority,
-                Icon:icon
-            }
-        });
-        res.status(201).json({
-            success: true,
-            message:"Menu added successfully",
-            newMenu
-        });
-    }
-    catch(error){
-        res.status(500).json({
-            success: false,
-            message:"adding menu failed",
-            error: error
-        });
-    }
-}
+// export const addMenu= async (req:CustomRequest,res:Response)=>{
+//     try {
+//         const {menuName,priority,icon}=req.body;
+//         if(!menuName || !priority){
+//             res.status(400).json({
+//                 success: false,
+//                 message:"menuName and priority are required"
+//             });
+//             return;
+//         }
+//         const newMenu= await prisma.menu.create({
+//             data:{
+//                 MenuName:menuName,
+//                 Priority:priority,
+//                 Icon:icon
+//             }
+//         });
+//         res.status(201).json({
+//             success: true,
+//             message:"Menu added successfully",
+//             newMenu
+//         });
+//     }
+//     catch(error){
+//         res.status(500).json({
+//             success: false,
+//             message:"adding menu failed",
+//             error: error
+//         });
+//     }
+// }
+
 
 
 
@@ -232,8 +233,10 @@ export const AssignMenuToRole = async (req: CustomRequest, res: Response) => {
     try {
         const { userId, Menus }: AssignMenuParams = req.body.data;
 
+
         console.log("object data",JSON.stringify(req.body));
         console.log("object data",JSON.stringify(Menus));
+
 
         if (!userId || !Menus) {
             res.status(400).json({
@@ -288,6 +291,7 @@ export const AssignMenuToRole = async (req: CustomRequest, res: Response) => {
         });
     }
 };
+
 
 
 
@@ -386,6 +390,7 @@ export const GetMenuWithSubMenu = async (req: CustomRequest, res: Response) => {
             },
         });
         
+
         console.log("object rights", rights,userId);
 
         const menuIds = rights
@@ -513,10 +518,12 @@ export const GetMenuWithSubMenu = async (req: CustomRequest, res: Response) => {
 //             },
 //             select: {
 //                 id: true,
+
 //                 MenuName: true,
 //                 Icon: true,
 //                 Priority: true,
 //                 SubMenus: {
+
 //                     where: {
 //                         isActive: true,
 //                         NOT: {
@@ -627,6 +634,8 @@ export const getUnassignedMenusWithSubMenus = async (req: CustomRequest, res: Re
 
 
 
+
+
 export const getALLWebRightsEntry= async (req:CustomRequest,res:Response)=>{
     try {
         const allEntries=await prisma.webUserRight.findMany({
@@ -662,7 +671,6 @@ export const getALLWebRightsEntry= async (req:CustomRequest,res:Response)=>{
         });
     }
 } 
-
 
 export const GetMenu=async (req:CustomRequest,res:Response)=>{
     try {
@@ -795,3 +803,4 @@ export const UpdateSubMenu= async (req:CustomRequest,res:Response)=>{
 /**
  * Create a new SubMenu under an existing Menu
  */
+

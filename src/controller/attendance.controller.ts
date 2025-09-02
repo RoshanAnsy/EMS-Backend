@@ -110,7 +110,7 @@ export const markAttendance = async (req: CustomRequest, res: Response): Promise
             res.status(200).json({
                 success: true,
                 message: "Punch In Successful.",
-                data: newAttendance
+                // data: newAttendance
             });
 
         } else {
@@ -143,7 +143,7 @@ export const markAttendance = async (req: CustomRequest, res: Response): Promise
             res.status(200).json({
                 success: true,
                 message: "Punch Out Successful.",
-                data: updatedAttendance
+                // data: updatedAttendance
             });
         }
 
@@ -438,6 +438,8 @@ export const getAttendanceEnhanced = async (req: CustomRequest, res: Response): 
             whereCondition
         );
 
+        
+
         // Fetch attendance data with optimized query
         const attendanceData = await prisma.attendance.findMany({
             where: whereCondition,
@@ -503,10 +505,6 @@ export const getAttendanceEnhanced = async (req: CustomRequest, res: Response): 
                 hasPrev: pageNum > 1,
                 isApproximate,
             },
-            meta: {
-                timezone: 'Asia/Kolkata',
-                dateFormat: 'DD/MM/YYYY, hh:mm:ss A',
-            }
         });
 
     } catch (error) {
@@ -592,7 +590,7 @@ export const getUserAttendance = async (req: Request, res: Response): Promise<vo
       PunchInLocation: record.PunchInLocation,
       punchOutLocation: record.punchOutLocation,
       status: record.status,
-      isActive: record.isActive,
+    //   isActive: record.isActive,
     }));
 
     const totalPages = Math.ceil(totalRecords / limitNum);

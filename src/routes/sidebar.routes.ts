@@ -1,3 +1,4 @@
+
 import express  from "express";
 import {getUnassignedMenusWithSubMenus,getALLWebRightsEntry,
     GetSubMenu,GetMenu,UpdateMenu,UpdateSubMenu, addMenu,addSubMenu,GetMenuWithSubMenu,AssignMenuToRole } from "../controller/sidebar.controller";
@@ -16,3 +17,4 @@ MenuRouter.get('/GetMenu',GetMenu);
 MenuRouter.get('/getSubMenu',GetSubMenu);
 MenuRouter.put('/updateMenu',UpdateMenu);
 MenuRouter.put('/updateSubMenu',UpdateSubMenu);
+
