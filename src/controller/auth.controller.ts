@@ -2,7 +2,7 @@ import { Response,Request } from "express";
 import { loginTypes, signUpTypes } from "../types/auth.types";
 import { loginZodSchema, signUpZodSchema } from "../utils/zod.validate";
 import { prisma } from "..";
-import bcrypt from "bcrypt";
+import bcrypt from 'bcryptjs';
 import dotenv from "dotenv";
 import * as jwt from 'jsonwebtoken';
 import {logUserActivity} from "./user.controller"
@@ -10,17 +10,17 @@ import { CustomRequest } from "../middleware/auth.middleware";
 dotenv.config();
 import { CookieOptions } from "express";
 import { Role } from "@prisma/client";
-
+// import { Role } from "../generated/prisma";
 // sign up controller 
 const signUp=async (req:Request,res:Response):Promise<void> =>{
         
     try{
        
-        const {name,email,password,conformPassword}:signUpTypes=req.body;
+        const {name,email,password,conformPassword,EmplyID}:signUpTypes=req.body;
         const roleValue = req.body.role as keyof typeof Role;
         // console.log("Role value",roleValue);
         // validate the data
-        if(!name ||!email ||!password ||!conformPassword){
+        if(!name ||!email ||!password ||!conformPassword || !EmplyID){
             res.status(400).json({
                 success: false,
                 error: "Please fill all fields"
@@ -28,7 +28,7 @@ const signUp=async (req:Request,res:Response):Promise<void> =>{
             return;
         }
     
-        const zodResponse=signUpZodSchema.safeParse({name,email,password,conformPassword});
+        const zodResponse=signUpZodSchema.safeParse({name,email,password,conformPassword,EmplyID});
         if(!zodResponse.success){
             res.status(400).json({
                 success: false,
@@ -59,7 +59,7 @@ const signUp=async (req:Request,res:Response):Promise<void> =>{
     
         const createUser=await prisma.user.create({
             data:{
-                name,email,password:hashedPassword,role:Role[roleValue],
+                name,email,password:hashedPassword,role:Role[roleValue],EmplyID,
             }
         })
         if(!createUser){
@@ -90,17 +90,17 @@ const signUp=async (req:Request,res:Response):Promise<void> =>{
 const login=async (req:Request,res:Response): Promise<void>=>{
     
     try{
-        const {email,password}:loginTypes=req.body;
+        const {EmplyID,password}:loginTypes=req.body;
         // console.log(email,password);
         // validate the data
-        if(!email ||!password){
+        if(!EmplyID ||!password){
             res.status(400).json({
                 success: false,
                 error: "Please fill all fields"
             });
             return;
         }
-        const zodResponse=loginZodSchema.safeParse({email,password});
+        const zodResponse=loginZodSchema.safeParse({EmplyID,password});
         if(!zodResponse.success){
             res.status(400).json({
                 success: false,
@@ -112,7 +112,7 @@ const login=async (req:Request,res:Response): Promise<void>=>{
         // implement login logic here
         const isUserExist=await prisma.user.findFirst({
             where:{
-                email
+                EmplyID
             },
             select:{
                 name:true,
@@ -120,6 +120,7 @@ const login=async (req:Request,res:Response): Promise<void>=>{
                 email:true,
                 id:true,
                 role:true,
+                EmplyID:true
             }
         });
 

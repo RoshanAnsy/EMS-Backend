@@ -6,12 +6,30 @@
 
 generator client {
   provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// generator client {
+//   provider = "prisma-client-js"
+
+// }
+
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
 
  
 enum Role {
@@ -28,6 +46,7 @@ model User {
   id        String   @id @default(uuid())
   name      String  
   email     String   @unique
+  EmplyID   String   @unique
   password  String
   image     String?
   createdAt DateTime @default(now())
@@ -40,6 +59,9 @@ model User {
   PermanentAddress  String?
   CurrentAddress  String?
   isActive  Boolean  @default(true)
+
+
+  
   attendance Attendance[] @relation("UserAttendance")
   task  Task[]  @relation("UserTask")
   assignedTasks Task[] @relation("AssignedTasks")  // Add this
@@ -178,21 +200,40 @@ enum BillStatus {
   NOT_INITIATED
 }
  
-model Attendance{
-  id        String   @id @default(uuid())
-  UserId    String
-  user      User     @relation("UserAttendance", fields: [UserId], references: [id])
-  PunchInTime   DateTime
-  PunchOutTime  DateTime
-  status    AttendanceStatus @default(ABSENT)
-  PunchInLocation String?
+// model Attendance{
+//   id        String   @id @default(uuid())
+//   Type      String
+//   UserId    String
+//   user      User     @relation("UserAttendance", fields: [UserId], references: [id])
+//   PunchInAt?   String
+//   PunchOutAt?  String
+//   status    AttendanceStatus @default(ABSENT)
+//   PunchInLocation String?
+//   punchOutLocation String?
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   isActive  Boolean  @default(true)
+//   @@index([UserId])
+// }
+ 
+
+model Attendance {
+  id               String   @id @default(uuid())
+  Type             String
+  UserId           String
+  user             User     @relation("UserAttendance", fields: [UserId], references: [id])
+  PunchInAt        String?
+  PunchOutAt       String?
+  status           AttendanceStatus @default(ABSENT)
+  PunchInLocation  String?
   punchOutLocation String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isActive  Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  isActive         Boolean  @default(true)
+
   @@index([UserId])
 }
- 
+
 enum AttendanceStatus {
   PRESENT
   ABSENT

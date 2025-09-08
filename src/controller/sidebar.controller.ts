@@ -1,7 +1,12 @@
-// import { Response } from "express";
-// import { prisma } from "..";
-// import { CustomRequest } from "../middleware/auth.middleware";
-// import { Role } from "@prisma/client";
+
+
+
+import { Response } from "express";
+import { prisma } from "..";
+import { CustomRequest } from "../middleware/auth.middleware";
+import { Role } from "@prisma/client";
+
+// import { Role } from "../generated/prisma";
 
 // export const GetSideBar= async (req:CustomRequest,res:Response)=>{
 //     try {
@@ -61,37 +66,37 @@
 
 
 
-// export const addMenu= async (req:CustomRequest,res:Response)=>{
-//     try {
-//         const {menuName,priority,icon}=req.body;
-//         if(!menuName || !priority){
-//             res.status(400).json({
-//                 success: false,
-//                 message:"menuName and priority are required"
-//             });
-//             return;
-//         }
-//         const newMenu= await prisma.menu.create({
-//             data:{
-//                 MenuName:menuName,
-//                 Priority:priority,
-//                 Icon:icon
-//             }
-//         });
-//         res.status(201).json({
-//             success: true,
-//             message:"Menu added successfully",
-//             newMenu
-//         });
-//     }
-//     catch(error){
-//         res.status(500).json({
-//             success: false,
-//             message:"adding menu failed",
-//             error: error
-//         });
-//     }
-// }
+export const addMenu= async (req:CustomRequest,res:Response)=>{
+    try {
+        const {menuName,priority,icon}=req.body;
+        if(!menuName || !priority){
+            res.status(400).json({
+                success: false,
+                message:"menuName and priority are required"
+            });
+            return;
+        }
+        const newMenu= await prisma.menu.create({
+            data:{
+                MenuName:menuName,
+                Priority:priority,
+                Icon:icon
+            }
+        });
+        res.status(201).json({
+            success: true,
+            message:"Menu added successfully",
+            newMenu
+        });
+    }
+    catch(error){
+        res.status(500).json({
+            success: false,
+            message:"adding menu failed",
+            error: error
+        });
+    }
+}
 
 
 
@@ -243,6 +248,7 @@ export const AssignMenuToRole = async (req: CustomRequest, res: Response) => {
                 success: false,
                 message: "userId and Menus are required",
             });
+            return;
         }
 
         const user = await prisma.user.findFirst({
@@ -255,6 +261,7 @@ export const AssignMenuToRole = async (req: CustomRequest, res: Response) => {
                 success: false,
                 message: "User not found or role missing",
             });
+            return;
         }
 
         const createData = Menus?.flatMap((menu) =>
@@ -372,7 +379,7 @@ export const GetMenuWithSubMenu = async (req: CustomRequest, res: Response) => {
     try {
         const userId = req.userId;
         const roleId = req.role as keyof typeof Role;
-        
+        console.log("this is details",userId,roleId)
         if(!userId || !roleId){
             res.status(400).json({
                 success: false,
@@ -392,13 +399,15 @@ export const GetMenuWithSubMenu = async (req: CustomRequest, res: Response) => {
         
 
         console.log("object rights", rights,userId);
-
+        
         const menuIds = rights
             .map(r => r.MenuId)
             .filter((id): id is string => id !== null); // filter null
         const subMenuIds = rights
             .map(r => r.SubMenuId)
             .filter((id): id is string => id !== null);
+
+      
         console.log("menuIds", menuIds, "subMenuIds", subMenuIds);
         // ✅ Fetch only menus that are accessible OR have accessible submenus
         const menus = await prisma.menu.findMany({
@@ -613,7 +622,7 @@ export const getUnassignedMenusWithSubMenus = async (req: CustomRequest, res: Re
             },
             orderBy: { Priority: "asc" },
         });
-
+        
         // Step 3: Filter out menus with no unassigned submenus
         const unassignedMenus = menus.filter(menu => menu.SubMenus.length > 0);
 

@@ -5,10 +5,11 @@ export interface signUpTypes{
     email: string;
     password: string;
     conformPassword: string;
+    EmplyID:string;
 }
 
 export interface loginTypes{
-    email: string;
+    EmplyID: string;
     password: string;
 }
 

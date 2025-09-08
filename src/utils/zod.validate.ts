@@ -5,10 +5,11 @@ export const signUpZodSchema=z.object({
     email:z.string().email(),
     password:z.string().min(8),
     conformPassword:z.string().min(8),
+    EmplyID:z.string().min(4),
 })
 
 export const loginZodSchema=z.object({
-    email:z.string().email(),
+    EmplyID:z.string().min(4),
     password:z.string().min(8),
 })
 

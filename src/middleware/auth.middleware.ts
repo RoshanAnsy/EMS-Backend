@@ -26,6 +26,7 @@ const authorization = async (req: CustomRequest, res: Response, next: NextFuncti
             ? authHeader.split(" ")[1]
             : req.cookies?.token || req.body.token;
 
+        console.log("token",token);
         if (!token) {
             res.status(401).json({
                 success: false,

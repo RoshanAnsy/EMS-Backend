@@ -1,10 +1,7 @@
 export interface AttendanceTypes {
-    PunchInLocation: string;
-    PunchOutLocation: string;
-    PunchInTime: Date;
-    PunchOutTime: Date;
-    status: "PRESENT" | "ABSENT" | "LEAVE" | "HOLIDAY";
-    UserId?: string;
+    Location:string;
+    
+    Type:string
 }
 
 export interface AttendanceRecord {
