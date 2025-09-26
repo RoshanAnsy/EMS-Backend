@@ -39,6 +39,14 @@ enum Role {
   AREAMANAGER
   STATEHEAD
   SALESOFFICER
+  AREAMANAGEROPS
+  ACCOUNTANT
+  SITESUPERVISOR
+  HR
+  CP1
+  CP2
+  SCP1
+  SCP2
 
 }
  
@@ -59,18 +67,21 @@ model User {
   PermanentAddress  String?
   CurrentAddress  String?
   isActive  Boolean  @default(true)
-
+  DateOfJoining DateTime?
+  
 
   
   attendance Attendance[] @relation("UserAttendance")
   task  Task[]  @relation("UserTask")
   assignedTasks Task[] @relation("AssignedTasks")  // Add this
   createdTasks  Task[] @relation("CreatedTasks")   // Add this
-  PaymentDetails  Payment[] @relation("UserPayment")
+  // PaymentDetails  Payment[] @relation("UserPayment")
   paymentsReceived Payment[] @relation("PaymentReceiver")  
   paymentsMade    Payment[] @relation("PaymentMaker") 
   BankDetails  BankDetails?
   logs             Log[]
+  TargetTasks TargetTask[] @relation("User")
+  AssignedTasks TargetTask[] @relation("AssignedTasks")
   
 }
  
@@ -172,21 +183,31 @@ model BankDetails {
 // New Payment model to track payment details
 model Payment {
   id        String   @id @default(uuid())
-  UserId    String 
-  user      User     @relation("UserPayment", fields: [UserId], references: [id])
+  // UserId    String 
+  // user      User     @relation("UserPayment", fields: [UserId], references: [id])
   FixAmount  Int   // Fixed amount for the bill
   VariableAmount Int   // Variable amount for the bill
   totalAmount Int // Total amount paid (FixAmount + VariableAmount)
-  remark    String
-  fileUrl   String   // For payment proof document
+  remark    String?
+  fileUrl   String?   // For payment proof document
   PaidTo   String   
   paidToUser User @relation("PaymentReceiver", fields: [PaidTo], references: [id])  // Add this relation
   PaidBy   String   
   paidByUser User @relation("PaymentMaker", fields: [PaidBy], references: [id]) 
+  Tds  Int?  // TDS amount if applicable
+  AnyTax   Int?  // GST amount if applicable
+  TravelCost Int? // Travel cost if applicable
+  OtherCost  Int? // Any other cost if applicable
+  FoodAllowanceCost Int? // Food allowance if applicable
+  medicleInsuranceCost Int? // Medical insurance cost if applicable
+  PFAmount Int? // PF amount if applicable
+  GratuityAmount Int? // Gratuity amount if applicable
+  LaultyAmount Int? // Laulaty amount if applicable
+  MisleneousAmount Int? // Misclaneous amount if applicable
   paidAt    DateTime @default(now())
   updatedAt DateTime @updatedAt
   isActive  Boolean  @default(true)
-  status   BillStatus @default(NOT_INITIATED)
+  // status   BillStatus @default(NOT_INITIATED)
   @@index([paidAt])
 } 
 
@@ -251,13 +272,34 @@ model Task {
   assignee   User     @relation("AssignedTasks", fields: [assignedTo], references: [id])  // Add this
   assignedBy String   
   assigner   User     @relation("CreatedTasks", fields: [assignedBy], references: [id]) 
-  dueDate   DateTime
+  // dueDate   DateTime
+  TaskStartedAt DateTime?
+  TaskCompletedAt DateTime?
+  TotalProjectCost Int?
+  TotalReceivedAmount Int?
+  PerUnitCost  Int?
+  TotalUnits   Int?
+  TaskBalanceAmount Int?
+  remark    String?
+  address   String?
+  pinCode   String?
+  city      String?
+  state     String?
+  country   String?
+  MobileNo  String?
+  purpose   String?
+  clientName String?
+  companyName String?
   status    TaskStatus @default(PENDING) // Enum for task status
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isActive  Boolean  @default(true)
   @@index([assignedTo])
   @@index([assignedBy])
+  @@index([status])
+  @@index([pinCode])
+  @@index([city])
+  @@index([state])
 }
  
 enum TaskStatus {
@@ -265,4 +307,40 @@ enum TaskStatus {
   INPROGRESS
   COMPLETED
   CANCELLED
+}
+
+
+
+model TargetTask {
+  TargetTaskID        String   @id @default(uuid())
+  UserId    String
+  user      User     @relation("User", fields: [UserId], references: [id])
+  
+  assignedTo String   
+  assignee   User     @relation("AssignedTasks", fields: [assignedTo], references: [id])  // Add this
+
+  // dueDate   DateTime
+  TaskStartedAt DateTime?
+  TaskCompletedAt DateTime?
+  TotalProjectCost Int?
+  TotalAmountTarget Int?
+  TotalTarget  Int?
+  TotalUnits   Int?
+  remark    String?
+  
+  companyName String?
+  TaskType    TaskPeriod @default(MONTHLY) // Enum for task status
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  @@index([assignedTo])
+  @@index([TaskType])
+  @@index([UserId])
+  
+}
+
+enum TaskPeriod {
+  MONTHLY
+  YEARLY
+  
 }

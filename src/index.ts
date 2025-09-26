@@ -8,7 +8,8 @@ import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 import { MenuRouter } from './routes/sidebar.routes';
 import cors from "cors"
-
+import TaskRouter from './routes/task.rotues';
+import PaymentRouter from './routes/payment.route';
 dotenv.config();
 const app = express();
 export const prisma=new PrismaClient();
@@ -29,10 +30,11 @@ app.get('/',(req:Request,res:Response)=>{
     res.send("server is running");
 })
 app.use('/',AuthRoute);
-
+app.use("/",TaskRouter);
 app.use("/",userRoute);
 app.use("/",AttendanceRouter);
 app.use("/",MenuRouter);
+app.use("/",PaymentRouter);
 
 
 

@@ -6,6 +6,7 @@ export interface signUpTypes{
     password: string;
     conformPassword: string;
     EmplyID:string;
+    DateOfJoining?: Date;
 }
 
 export interface loginTypes{
