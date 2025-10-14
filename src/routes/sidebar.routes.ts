@@ -1,6 +1,7 @@
 
 import express  from "express";
 import {getUnassignedMenusWithSubMenus,getALLWebRightsEntry,
+    GetMenuAccessList,RemoveAccess,
     GetSubMenu,GetMenu,UpdateMenu,UpdateSubMenu, addMenu,addSubMenu,GetMenuWithSubMenu,AssignMenuToRole } from "../controller/sidebar.controller";
 import { authorization } from "../middleware/auth.middleware";
 // import { authorization } from "../middleware/auth.middleware";
@@ -17,4 +18,7 @@ MenuRouter.get('/GetMenu',GetMenu);
 MenuRouter.get('/getSubMenu',GetSubMenu);
 MenuRouter.put('/updateMenu',UpdateMenu);
 MenuRouter.put('/updateSubMenu',UpdateSubMenu);
+MenuRouter.get('/GetMenuAccessList',authorization,GetMenuAccessList);
+MenuRouter.post('/RemoveAccess',authorization,RemoveAccess);
+// export default sidebarRouter;
 

@@ -1,7 +1,7 @@
 import express from 'express';
 import { createTask,GetTasksList,UpdateTaskStatus,
     CompleteTask,GetAssignTasksList,GetTargetTasksList,
-    GetCompletedTaskDetails,AcceptTask,
+    GetCompletedTaskDetails,AcceptTask,DeleteTask,
     GetCompletedTasksList,GetInprogressTasksList,CreateTargetTask } from '../controller/task.controller';
 import { authorization } from '../middleware/auth.middleware';
 
@@ -20,5 +20,6 @@ TaskRouter.get('/GetInprogressTasksList',authorization,GetInprogressTasksList);
 TaskRouter.post('/CreateTargetTask',authorization,CreateTargetTask);
 TaskRouter.get('/GetTargetTasksList',authorization,GetTargetTasksList);
 TaskRouter.post('/AcceptTask',authorization,AcceptTask);
+TaskRouter.post('/DeleteTask',authorization,DeleteTask);
 
 export default TaskRouter;

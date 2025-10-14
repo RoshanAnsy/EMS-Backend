@@ -239,8 +239,8 @@ export const AssignMenuToRole = async (req: CustomRequest, res: Response) => {
         const { userId, Menus }: AssignMenuParams = req.body.data;
 
 
-        console.log("object data",JSON.stringify(req.body));
-        console.log("object data",JSON.stringify(Menus));
+        // console.log("object data",JSON.stringify(req.body));
+        // console.log("object data",JSON.stringify(Menus));
 
 
         if (!userId || !Menus) {
@@ -278,7 +278,7 @@ export const AssignMenuToRole = async (req: CustomRequest, res: Response) => {
 
 
 
-        console.log("result 1", createData);
+        // console.log("result 1", createData);
         const result=await prisma.webUserRight.createMany({
             data: createData,
             skipDuplicates: false, // ✅ avoids inserting duplicates if unique index exists
@@ -625,7 +625,7 @@ export const getUnassignedMenusWithSubMenus = async (req: CustomRequest, res: Re
         
         // Step 3: Filter out menus with no unassigned submenus
         const unassignedMenus = menus.filter(menu => menu.SubMenus.length > 0);
-
+        console.log("this is unsign ",unassignedMenus)
         res.status(200).json({
             success: true,
             message: "Fetched unassigned menus successfully",
@@ -812,4 +812,211 @@ export const UpdateSubMenu= async (req:CustomRequest,res:Response)=>{
 /**
  * Create a new SubMenu under an existing Menu
  */
+
+
+export const GetMenuAccessList = async (req:CustomRequest, res: Response) => {
+    try {
+        const {userId} = req.query;
+        // const {userId}=req.query; 
+        // const { userId } = req.prams;
+        console.log("this is from latest code ",userId)// Support userId from body or authenticated request
+        if(!userId){
+            res.status(400).json({
+                success: false,
+                message: "userId is required",
+            });
+            return;
+        }
+
+        // Get all rights for this user (active, access allowed)
+        const rights = await prisma.webUserRight.findMany({
+            where: { isActive: true, isAccess: true, isAccessBy: userId as string },
+            select: {
+                MenuId: true,
+                SubMenuId: true,
+            },
+        });
+        console.log("this is from latest code rights ",rights)// Support userId from body or authenticated request
+
+        const menuIds = rights
+            .map(r => r.MenuId)
+            .filter((id): id is string => !!id);
+        const subMenuIds = rights
+            .map(r => r.SubMenuId)
+            .filter((id): id is string => !!id);
+
+        // Find menus user can access (direct menu access or via submenus)
+        const menus = await prisma.menu.findMany({
+            where: {
+                OR: [
+                    { id: { in: menuIds } }, // Direct menu access
+                    { SubMenus: { some: { id: { in: subMenuIds }, isActive: true } } } // Access via submenus
+                ],
+                isActive: true,
+            },
+            select: {
+                id: true,
+                MenuName: true,
+                Icon: true,
+                Priority: true,
+                SubMenus: {
+                    where: {
+                        id: { in: subMenuIds }, // Only accessible submenus for this user
+                        isActive: true,
+                    },
+                    select: {
+                        id: true,
+                        SubMenuName: true,
+                        Routes: true,
+                        Icon: true,
+                        Priority: true,
+                    },
+                    orderBy: { Priority: 'asc' },
+                },
+            },
+            orderBy: { Priority: 'asc' },
+        });
+        console.log("this is from latest menu ",menus)// Support userId from body or authenticated request
+
+        // You get each menu with its submenus, every ID and name included
+        res.status(200).json({
+            success: true,
+            message: "Fetching sidebar successful",
+            menus,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Fetching sidebar failed",
+            error,
+        });
+        return;
+    }
+};
+
+
+
+
+// export const RemoveAccess = async (req: CustomRequest, res: Response) => {
+//     try {
+//         const { userId, menuIds, submenuIds } = req.body; // Support userId from body or authenticated request
+//         if(!userId || !Array.isArray(menuIds) || !Array.isArray(submenuIds)){
+//             res.status(400).json({
+//                 success: false,
+//                 message: "userId is required",
+//             });
+//             return;
+//         }
+
+
+//         const deleteMenuAccess = prisma.webUserRight.deleteMany({
+//             where: {
+//                 isActive: true,
+//                 isAccessBy: userId,
+//                 MenuId: {in: menuIds },
+//             },
+//         });
+
+//         const deleteSubmenuAccess = prisma.webUserRight.deleteMany({
+//             where: {
+//                 isActive: true,
+//                 isAccessBy: userId,
+//                 SubMenuId: { in: submenuIds },
+//             },
+//         });
+
+//         // Perform both deletes in a transaction
+//         const result = await prisma.$transaction([deleteMenuAccess, deleteSubmenuAccess]);
+
+//         // Find menus user can access (direct menu access or via submenus)
+        
+
+//         // You get each menu with its submenus, every ID and name included
+//         res.status(200).json({
+//             success: true,
+//             message: "Access removed successfully",
+//             result,
+//         });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Fetching sidebar failed",
+//             error,
+//         });
+//     }
+// };
+
+
+export const RemoveAccess = async (req: CustomRequest, res: Response) => {
+    try {
+        const { userId, menuIds, submenuIds } = req.body;
+
+        if (!userId || !Array.isArray(menuIds) || !Array.isArray(submenuIds)) {
+            res.status(400).json({
+                success: false,
+                message: "userId, menuIds, and submenuIds must be valid arrays",
+            });
+            return;
+        }
+
+        // Step 1: Delete submenu access safely
+        const deleteSubmenuAccess = prisma.webUserRight.deleteMany({
+            where: {
+                isActive: true,
+                isAccessBy: userId,
+                SubMenuId: { in: submenuIds },
+            },
+        });
+
+        // Step 2: Before deleting menu access, ensure there are no active submenus left for those menus
+        const menusWithRemainingSubmenus = await prisma.webUserRight.findMany({
+            where: {
+                isActive: true,
+                isAccessBy: userId,
+                MenuId: { in: menuIds },
+                SubMenuId: { notIn: submenuIds },
+            },
+            select: { MenuId: true },
+            distinct: ["MenuId"],
+        });
+
+        const menusToKeep = menusWithRemainingSubmenus.map(m => m.MenuId);
+        const menusToDelete = menuIds.filter(id => !menusToKeep.includes(id));
+
+        // Step 3: Delete only those menus that have no remaining submenus
+        const deleteMenuAccess = prisma.webUserRight.deleteMany({
+            where: {
+                isActive: true,
+                isAccessBy: userId,
+                MenuId: { in: menusToDelete },
+                OR:[
+                // { SubMenuId: null }, // for nullable column
+                    { SubMenuId: "" },
+
+                ]
+                 
+            },
+        });
+
+        // Step 4: Execute both deletions in a transaction
+        const result = await prisma.$transaction([deleteSubmenuAccess, deleteMenuAccess]);
+
+        res.status(200).json({
+            success: true,
+            message: "Access removed successfully",
+            result,
+        });
+        return;
+    } catch (error) {
+        console.error("Error removing access:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error while removing access",
+            error,
+        });
+        return;
+    }
+};
+
+
 

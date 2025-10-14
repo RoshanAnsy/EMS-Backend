@@ -8,6 +8,14 @@ export const signUpZodSchema=z.object({
     EmplyID:z.string().min(4),
 })
 
+
+export const passwordUpdateZodSchema=z.object({
+    
+    password:z.string().min(8),
+    conformPassword:z.string().min(8),
+    EmplyID:z.string().min(4),
+})
+
 export const loginZodSchema=z.object({
     EmplyID:z.string().min(4),
     password:z.string().min(8),

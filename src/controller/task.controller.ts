@@ -4,7 +4,7 @@ import { prisma } from "..";
 // import { PunchInZodSchema, PunchOutZodSchema } from "../utils/zod.validate";
 // import {  formatTime } from "../utils/formatDateTime";
 import { CustomRequest } from "../middleware/auth.middleware";
-
+import { TaskPeriod } from "@prisma/client";
 
 
 export const createTask=async (req:CustomRequest,res:Response)=>{
@@ -362,20 +362,20 @@ export const UpdateTaskStatus=async (req:CustomRequest,res:Response)=>{
     }
 }
 
-import { TaskPeriod } from "@prisma/client";
+
 
 export const CreateTargetTask=async (req:CustomRequest,res:Response)=>{
     try {
         const {TaskStartedAt, TaskCompletedAt,
-            TotalAmountTarget,TotalTarget,TotalUnits,assignedTo,TaskType,
+            TotalAmountTarget,TotalUnits,assignedTo,TaskType,
             remark ,companyName} = req.body;
         const userId =req.userId;
        
-        console.log(TaskStartedAt, TaskCompletedAt,
-            TotalAmountTarget,TotalTarget,TotalUnits,assignedTo,TaskType,
-            remark ,companyName);
+        // console.log(TaskStartedAt, TaskCompletedAt,
+        //     TotalAmountTarget,TotalTarget,TotalUnits,assignedTo,TaskType,
+        //     remark ,companyName);
         // Validate input
-        if (!TotalAmountTarget || !TaskStartedAt || !companyName || !TotalTarget || !TaskCompletedAt || !assignedTo || !TaskType || !TotalUnits || !remark) {
+        if (!TotalAmountTarget || !TaskStartedAt || !companyName || !TaskCompletedAt || !assignedTo || !TaskType || !TotalUnits || !remark) {
             res.status(400).json({ message: "All  are required" });
             return;
         }
@@ -558,3 +558,33 @@ export const AcceptTask=async (req:CustomRequest,res:Response)=>{
         res.status(500).json({ message: "Internal server error" });
     }   
 }
+
+
+
+export const DeleteTask=async (req:CustomRequest,res:Response)=>{
+    try {
+        const { taskId } = req.body;
+        const userId=req.userId;
+
+        
+        if(!userId){
+            res.status(401).json({message:"Unauthorized: User userId missing"});
+            return;
+        }
+        if(!taskId){
+            res.status(400).json({message:"Task ID is required"});
+            return;
+        }
+        
+        const updatedTask=await prisma.task.delete({
+            where:{id:taskId,status:"PENDING"},
+            
+        });
+
+        res.status(200).json({success:true,message:"Task Delete successfully",updatedTask});
+    } catch (error) {
+        console.error("Error accepting task:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }   
+}
+

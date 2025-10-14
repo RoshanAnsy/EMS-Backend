@@ -82,7 +82,11 @@ model User {
   logs             Log[]
   TargetTasks TargetTask[] @relation("User")
   AssignedTasks TargetTask[] @relation("AssignedTasks")
-  
+
+  UserMaping UserMaping[]@relation("User")
+  UserMapingAssignedTo UserMaping[]@relation("Assigner")
+  // UserMapingAssignUser  UserMaping[]@relation("AssignedUser")
+  UserMapingAssignUser  AssignUserMaping[] @relation("AssignedUser")
 }
  
 
@@ -343,4 +347,80 @@ enum TaskPeriod {
   MONTHLY
   YEARLY
   
+}
+
+
+
+// model UserMaping {
+//   UserMapingAutoID        String   @id @default(uuid())
+//   CreatedByID    String
+//   CreatedBy      User     @relation("User", fields: [CreatedByID], references: [id])
+  
+//   AssignedToID String   
+//   AssignedTo   User     @relation("Assigner", fields: [AssignedToID], references: [id])  // Add this
+
+//   AssignUserID String   
+//   AssignUser   User     @relation("AssignedUser", fields: [AssignUserID], references: [id])  // Add this
+
+  
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   isActive  Boolean  @default(true)
+
+//   @@index([AssignedToID])
+//   @@index([AssignUserID])
+//   @@index([CreatedByID])
+  
+// }
+
+
+
+model UserMaping {
+  UserMapingAutoID String   @id @default(uuid())
+  CreatedByID      String
+  CreatedBy        User     @relation("User", fields: [CreatedByID], references: [id])
+
+  AssignedToID     String
+  AssignedTo       User     @relation("Assigner", fields: [AssignedToID], references: [id])
+
+  AssignUsers      AssignUserMaping[]  @relation("UserMapingToAssignUser")// One-to-many relation
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+
+  @@index([AssignedToID])
+  @@index([CreatedByID])
+}
+
+model AssignUserMaping {
+  id            String   @id @default(uuid())
+  userMapingId  String
+  assignUserId  String
+  AssignUser    User     @relation("AssignedUser", fields: [assignUserId], references: [id])
+  UserMaping    UserMaping @relation("UserMapingToAssignUser",fields: [userMapingId], references: [UserMapingAutoID])
+  // UserMaping    UserMaping @relation("UserMapingToAssignUser", fields: [userMapingId], references: [UserMapingAutoID])
+}
+
+
+
+
+model paymentReceipt {
+  PaymentReceiptID       String   @id @default(uuid())
+  FixAmount              Boolean  @default(false)
+  VariableAmount         Boolean  @default(false)
+  TotalAmount            Boolean  @default(false)
+  Tds                    Boolean  @default(false)
+  AnyTax                 Boolean  @default(false)
+  TravelCost             Boolean  @default(false)
+  OtherCost              Boolean  @default(false)
+  FoodAllowanceCost      Boolean  @default(false)
+  MedicleInsuranceCost   Boolean  @default(false)
+  PFAmount               Boolean  @default(false)
+  GratuityAmount         Boolean  @default(false)
+  LaultyAmount           Boolean  @default(false)
+  MisleneousAmount       Boolean  @default(false)
+  updatedAt              DateTime @updatedAt
+  isActive               Boolean  @default(true)
+  updatedBY  String
 }

@@ -1,6 +1,6 @@
 import { Response,Request } from "express";
 import { loginTypes, signUpTypes } from "../types/auth.types";
-import { loginZodSchema, signUpZodSchema } from "../utils/zod.validate";
+import { loginZodSchema, signUpZodSchema,passwordUpdateZodSchema } from "../utils/zod.validate";
 import { prisma } from "..";
 import bcrypt from 'bcryptjs';
 import dotenv from "dotenv";
@@ -112,7 +112,8 @@ const login=async (req:Request,res:Response): Promise<void>=>{
         // implement login logic here
         const isUserExist=await prisma.user.findFirst({
             where:{
-                EmplyID
+                EmplyID,
+                isActive:true
             },
             select:{
                 name:true,
@@ -224,4 +225,104 @@ const logout=async (req:CustomRequest,res:Response): Promise<void>=>{
     }
 }
 
+export const UpdatePassWord=async (req:CustomRequest,res:Response):Promise<void> =>{
+        
+    try{
+       
+        const {password,conformPassword,EmplyID}:signUpTypes=req.body;
+        const roleValue = req.role as keyof typeof Role;
+        // console.log("Role value",roleValue);
+        // validate the data
+        if(!password ||!conformPassword || !EmplyID){
+            res.status(400).json({
+                success: false,
+                error: "Please fill all fields"
+            });
+            return;
+        }
+
+
+        if(roleValue!="ADMIN"){
+            res.status(400).json({
+                success: false,
+                message: "YOU ARE NOT AUTHORIZED TO CHANGE PASSWORD"
+            });
+            return;
+        }
+    
+        const zodResponse=passwordUpdateZodSchema.safeParse({password,conformPassword,EmplyID});
+        if(!zodResponse.success){
+            res.status(400).json({
+                success: false,
+                error: JSON.parse(zodResponse.error.message)
+            });
+            return;
+        }
+
+    
+        //verify password and confirm password
+        if(password!== conformPassword){
+            res.status(400).json({
+                success: false,
+                error: "Passwords and conformPassword did not matched"
+            });
+            return;
+        }
+    
+        // hash password
+        const hashedPassword=await bcrypt.hash(password,Number(process.env.ROUND));
+        if(!hashedPassword){
+            res.status(403).json({
+                success: false,
+                error: "Error hashing password"
+            });
+            return;
+        }
+
+        const userExit=await prisma.user.findFirst({
+            where:{EmplyID}
+        })
+
+        if(!userExit){
+            res.status(404).json({
+                success: false,
+                error: "User not found"
+            });
+            return;
+        }
+
+        const updatePassword= await prisma.user.update({
+            where:{EmplyID},
+            data:{password:hashedPassword}
+        })
+    
+        // const createUser=await prisma.user.create({
+        //     data:{
+        //         name,email,password:hashedPassword,role:Role[roleValue],EmplyID,
+        //     }
+        // })
+        if(!updatePassword){
+            res.status(404).json({
+                success: false,
+                error: "Error creating user"
+            });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            message: "Password update successfully",
+            updatePassword,
+        })
+    }
+    catch(error){
+        res.status(500).json({
+            success: false,
+            error: error
+        });
+    }
+
+
+
+
+}
 export {signUp,login,logout} 

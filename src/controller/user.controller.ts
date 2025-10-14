@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import { getQueryParamAsString } from "../utils/queryUtils";
 import { QueryOptimizer } from "../utils/queryOptimize";
 import { signUpZodSchema } from "../utils/zod.validate";
+// import { Where } from "redis-om";
 
 const logUserActivity=async (userId:string, action:'LOGIN' | 'LOGOUT')=>{
     
@@ -184,6 +185,7 @@ const GetUser = async (req:CustomRequest,res:Response) => {
 export const UserList=async (req:Request,res:Response)=>{
     try{
         const users= await prisma.user.findMany({
+            where:{isActive:true},
             select:{
                 id:true,
                 name:true,
@@ -203,6 +205,36 @@ export const UserList=async (req:Request,res:Response)=>{
         res.status(500).json({
             success: false,
             message:"User list fetch failed",
+            error: error
+        });
+    }
+}
+
+export const DeleteUser=async (req:Request,res:Response)=>{
+    try{
+        const {userID}=req.body;
+        if(!userID){
+            res.status(401).json({
+                message:"userId is missing",
+                success:false,
+            })
+            return;
+        }
+        const users= await prisma.user.update({
+            where:{id:userID,isActive:true,},
+            data:{isActive:false,}
+            
+        });
+        res.status(200).json({
+            success: true,
+            message:"User delete successfully",
+            users
+        });
+    }
+    catch(error){
+        res.status(500).json({
+            success: false,
+            message:"User delete failed",
             error: error
         });
     }
@@ -515,5 +547,666 @@ export const GetUserListForDropdown=async (req:Request,res:Response):Promise<voi
         });
     }
 }
+
+
+
+
+type CreateUserMappingInput = {
+  assignedToId: string;
+  assignUserIds: string[];
+};
+
+export const CreateUserMapping = async (req: CustomRequest, res: Response) => {
+    try {
+        const { assignedToId, assignUserIds } = req.body as CreateUserMappingInput;
+        const createdById = req.userId;
+
+        if (!createdById || !assignedToId || !assignUserIds?.length) {
+            res.status(400).json({
+                success: false,
+                message: "Missing required fields: assignedToId, assignUserIds",
+            });
+            return;
+        }
+        let userMaping;
+        // 1️⃣ Check if a mapping already exists for this AssignedToID
+        userMaping = await prisma.userMaping.findFirst({
+            where: { AssignedToID: assignedToId, isActive: true },
+            include: { AssignUsers: true },
+        });
+       
+        if (userMaping) {
+            // 2️⃣ Add only new AssignUsers that don’t exist already
+            const existingAssignUserIds = userMaping.AssignUsers.map(u => u.assignUserId);
+            const newAssignUsers = assignUserIds
+                .filter(id => !existingAssignUserIds.includes(id))
+                .map(id => ({ assignUserId: id }));
+
+            if (newAssignUsers.length > 0) {
+                await prisma.assignUserMaping.createMany({
+                    data: newAssignUsers.map(u => ({ ...u, userMapingId: userMaping!.UserMapingAutoID })),
+                });
+            }
+           
+        } else {
+            // 3️⃣ Create a new UserMaping with nested AssignUsers
+            userMaping = await prisma.userMaping.create({
+                data: {
+                    CreatedByID: createdById,
+                    AssignedToID: assignedToId,
+                    AssignUsers: {
+                        create: assignUserIds.map(id => ({ assignUserId: id })),
+                    },
+                },
+            });
+        }
+        
+
+        // 4️⃣ Fetch the updated mapping with nested user info
+        const result = await prisma.userMaping.findUnique({
+            where: { UserMapingAutoID: userMaping.UserMapingAutoID },
+            include: {
+                AssignedTo: { select: { id: true, name: true } },
+                AssignUsers: {
+                    include: { AssignUser: { select: { id: true, name: true, role: true } } },
+                },
+            },
+        });
+        
+        res.status(201).json({
+            success: true,
+            message: "User mapping updated successfully",
+            result,
+        });
+        return;
+    } catch (error) {
+        console.error("Error in CreateUserMapping:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to create/update user mapping",
+            error: (error as Error).message,
+        });
+        return;
+    }
+};
+
+
+
+export const GetListUserOnRoleBased = async (req: CustomRequest, res: Response) => {
+    try {
+        // <-- multiple IDs expected
+        const userId = req.userId;
+        const {Role}=req.body;
+        console.log(Role,userId,req.body)
+
+        if (!userId || !Role) {
+            res.status(401).json({ success: false, message: "Unauthorized: User ID missing" });
+            return;
+        }
+
+       
+
+        const List=await prisma.user.findMany({
+            where:{role:Role as Role},
+            select:{
+                id:true,
+                name:true
+            }
+        })
+
+        res.status(201).json({
+            success: true,
+            message: "User List successfully",
+            List
+        });
+        return;
+    } catch (error) {
+        console.error("Error in CreateUserMaping:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to create user mapping",
+            error,
+        });
+        return;
+    }
+};
+
+
+export const GetListUserAssign = async (req: CustomRequest, res: Response) => {
+    try {
+        const userId = req.userId;
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "Unauthorized: User ID missing",
+            });
+            return;
+        }
+
+        const user=await prisma.user.findFirst({where:{id:userId},
+            select:{
+                id:true,
+                name:true,
+                role:true,
+            }
+        })
+
+        const list = await prisma.userMaping.findMany({
+            where: {
+                AssignedToID: userId, // get mappings where current user is the "assignee"
+                isActive: true,       // only active user mappings
+            },
+            
+            include: {
+                AssignUsers: {
+                    // where: {
+                    //     AssignUser: {
+                    //         isActive: true, // only fetch active assigned users
+                    //     },
+                    // },
+                    include: {
+                        AssignUser: {
+                            select: {
+                                id: true,
+                                name: true,
+                                role: true,
+                                MobileNo:true,
+                                EmplyID:true,
+                                email:true
+                            },
+                        },
+                    },
+                },
+                
+            },
+            
+        });
+        
+        res.status(200).json({
+            success: true,
+            message: "Assign list fetched successfully",
+            list,
+            user,
+        });
+        return;
+    } catch (error) {
+        console.error("Error in GetListUserAssign:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch user list",
+            error: (error as Error).message,
+        });
+        return;
+    }
+};
+
+
+// export const GetListUserAssign = async (req: CustomRequest, res: Response) => {
+//     try {
+//         const userId = req.userId;
+
+//         if (!userId) {
+//             return res.status(401).json({ success: false, message: "Unauthorized: User ID missing" });
+//         }
+
+//         // Fetch UserMaping with included AssignUsers
+//         const mappings = await prisma.userMaping.findMany({
+//             where: { AssignedToID: userId, isActive: true },
+//             include: {
+//                 AssignUser: {
+//                     where: { AssignUser: { isActive: true } },
+//                     include: {
+//                         AssignUser: {
+//                             select: { id: true, name: true, role: true }
+//                         }
+//                     }
+//                 }
+//             }
+//         });
+
+//         // Transform into desired format
+//         const List: UserMapping[] = mappings.map((map) => ({
+//             id: map.UserMapingAutoID,
+//             AssignedToID: map.AssignedToID,
+//             CreatedByID: map.CreatedByID,
+//             AssignUserID: undefined, // optional if you want one main, can remove
+//             AssignUser: map.AssignUsers.map((au) => ({
+//                 id: au.AssignUser.id,
+//                 name: au.AssignUser.name,
+//                 role: au.AssignUser.role
+//             }))
+//         }));
+
+//         res.status(200).json({
+//             success: true,
+//             message: "User List successfully",
+//             List
+//         });
+//     } catch (error) {
+//         console.error("Error in GetListUserAssign:", error);
+//         res.status(500).json({
+//             success: false,
+//             message: "Failed to fetch user mapping",
+//             error,
+//         });
+//     }
+// };
+
+
+
+export const UserListByRole=async (req:Request,res:Response)=>{
+    try{
+        const {Role}=req.query;
+        let users;
+        if(!Role){
+            res.status(401).json({
+                message:"Select the role",
+                success:false
+            })
+            return;
+        }
+
+        if (Role === "ADMIN") {
+            users = await prisma.user.findMany({
+                where: {
+                    isActive:true,
+                    role: {
+                        in: ["HOS", "DIRECTOR","HR","AREAMANAGEROPS","ACCOUNTANT"], // adjust role values according to your schema
+                    },
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            });
+        }
+        if (Role === "DIRECTOR") {
+            users = await prisma.user.findMany({
+                where: {
+                    isActive:true,
+                    role: {
+                        in: ["HOS", "STATEHEAD","HR","AREAMANAGEROPS","ACCOUNTANT"], // adjust role values according to your schema
+                    },
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            });
+        }
+
+        if (Role === "HOS") {
+            users = await prisma.user.findMany({
+                where: {
+                    isActive:true,
+                    role: {
+                        in: ["SITESUPERVISOR", "STATEHEAD","HR","AREAMANAGER","ACCOUNTANT"], // adjust role values according to your schema
+                    },
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            });
+        }
+        if (Role === "STATEHEAD") {
+            users = await prisma.user.findMany({
+                where: {
+                    isActive:true,
+                    role: {
+                        in: ["SITESUPERVISOR", "SCP1","SCP2","HR","AREAMANAGER","ACCOUNTANT"], // adjust role values according to your schema
+                    },
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            });
+        }
+
+        if (Role === "AREAMANAGER") {
+            users = await prisma.user.findMany({
+                where: {
+                    isActive:true,
+                    role: {
+                        in: ["SALESOFFICER", "CP1","CP2","SCP1","SCP2"], // adjust role values according to your schema
+                    },
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            });
+        }
+
+        if (Role === "SCP2" || Role==="SCP2") {
+            users = await prisma.user.findMany({
+                where: {
+                    isActive:true,
+                    role: {
+                        in: [ "CP1","CP2"], // adjust role values according to your schema
+                    },
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                },
+            });
+        }
+
+
+
+
+
+        res.status(200).json({
+            success: true,
+            message:"User list fetch successful",
+            users
+        });
+        return;
+    }
+    catch(error){
+        res.status(500).json({
+            success: false,
+            message:"User list fetch failed",
+            error: error
+        });
+    }
+}
+
+
+
+export const GetTeamListByID = async (req: CustomRequest, res: Response) => {
+    try {
+
+        const {UserID}=req.query;
+        const userId = req.userId;
+        if (!UserID) {
+            res.status(401).json({
+                success: false,
+                message: "userid  is missing",
+            });
+            return;
+        }
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "Unauthorized: User ID missing",
+            });
+            return;
+        }
+
+        const user=await prisma.user.findFirst({where:{id:UserID as string},
+            select:{
+                id:true,
+                name:true,
+                role:true,
+            }
+        })
+
+        const list = await prisma.userMaping.findMany({
+            where: {
+                AssignedToID: UserID as string, // get mappings where current user is the "assignee"
+                isActive: true,       // only active user mappings
+            },
+            
+            include: {
+                AssignUsers: {
+                    where: {
+                        AssignUser: {
+                            isActive: true, // only fetch active assigned users
+                        },
+                    },
+                    include: {
+                        AssignUser: {
+                            select: {
+                                id: true,
+                                name: true,
+                                role: true,
+                                MobileNo:true,
+                                EmplyID:true,
+                                email:true
+                            },
+                        },
+                    },
+                },
+                
+            },
+            
+        });
+        console.log(list);
+        res.status(200).json({
+            success: true,
+            message: "Assign list fetched successfully",
+            list,
+            user,
+        });
+        return;
+    } catch (error) {
+        console.error("Error in GetListUserAssign:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch user list",
+            error: (error as Error).message,
+        });
+        return;
+    }
+};
+
+export const RestoreUser = async (req:Request,res:Response)=>{
+    try{
+        const {userId}=req.query;
+
+        if(!userId){
+            res.status(401).json({
+                message:"userId is missing",
+                success:false,
+            })
+        }
+
+        const updateResult= await prisma.user.update({
+            where:{id:userId as string},
+            data:{isActive:true}
+        })
+
+        res.status(201).json({
+            message:"user restore successfully",
+            updateResult
+        })
+
+    }
+    catch(error){
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch user list",
+            error: (error as Error).message,
+        });
+        return;
+    }
+}
+
+export const GetTeamListAndTaskDetailByID = async (req: CustomRequest, res: Response) => {
+    try {
+
+        const {UserID,startOfMonth,endOfMonth}=req.query;
+        const userId = req.userId;
+        if (!UserID || !startOfMonth || !endOfMonth) {
+            res.status(401).json({
+                success: false,
+                message: "Required Parameter is missing",
+            });
+            return;
+        }
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "Unauthorized: User ID missing",
+            });
+            return;
+        }
+
+        const user=await prisma.user.findFirst({where:{id:UserID as string},
+            select:{
+                id:true,
+                name:true,
+                role:true,
+            }
+        })
+
+        
+
+        const list = await prisma.userMaping.findMany({
+            where: {
+                AssignedToID: UserID as string, // get mappings where current user is the "assignee"
+                isActive: true,       // only active user mappings
+            },
+            
+            include: {
+                AssignUsers: {
+                    where: {
+                        AssignUser: {
+                            isActive: true, // only fetch active assigned users
+                        },
+                    },
+                    include: {
+                        AssignUser: {
+                            select: {
+                                id: true,
+                                name: true,
+                                role: true,
+                                MobileNo:true,
+                                EmplyID:true,
+                                email:true
+                            },
+                        },
+                    },
+                },
+                
+            },
+            
+        });
+
+        //console.log(new Date(startOfMonth as string),);
+
+        const CompletedTaskAmountTeamLead = await prisma.task.aggregate({
+            where: {
+                assignedTo: UserID as string,
+                status: "COMPLETED",
+                isActive: true,
+                createdAt: {
+                    gte:new Date(startOfMonth as string), // completed date >= first day of current month
+                    lte: new Date(endOfMonth as string),   // completed date <= last day of current month
+                },
+            },
+            _count: {
+                _all: true, // total completed tasks
+            },
+            _sum: {
+                TotalProjectCost: true,
+                TotalReceivedAmount: true,
+            },
+        });
+
+        const CompletedTaskAmountTeam = await prisma.task.groupBy({
+            by: ['assignedTo'],
+            where: {
+                assignedTo: {
+                    in: list.flatMap((m) => m.AssignUsers.map((au) => au.assignUserId)),
+                },
+                status: "COMPLETED",
+                isActive: true,
+                createdAt: {
+                    gte:new Date(startOfMonth as string), // completed date >= first day of current month
+                    lte: new Date(endOfMonth as string),   // completed date <= last day of current month
+                },
+            },
+            _count: {
+                _all: true, // total completed tasks
+            },
+            _sum: {
+                TotalProjectCost: true,
+                TotalReceivedAmount: true,
+            },
+            
+        });
+        // const assignUserIds = list.flatMap(m => m.AssignUsers.map(au => au.assignUserId));
+        const finalReport = list.flatMap(mapping =>
+            mapping.AssignUsers.map(au => {
+                const match = CompletedTaskAmountTeam.find(c => c.assignedTo === au.assignUserId);
+                return {
+                    id: au.AssignUser.id,
+                    name: au.AssignUser.name,
+                    role: au.AssignUser.role,
+                    MobileNo: au.AssignUser.MobileNo,
+                    EmplyID: au.AssignUser.EmplyID,
+                    email: au.AssignUser.email,
+                    completedTaskCount: match?._count?._all ?? 0,
+                    totalProjectCost: match?._sum?.TotalProjectCost ?? 0,
+                    totalReceivedAmount: match?._sum?.TotalReceivedAmount ?? 0
+                };
+            })
+        );
+
+        const teamTotals = finalReport.reduce(
+            (acc, item) => {
+                acc.completedTaskCount += item.completedTaskCount;
+                acc.totalProjectCost += item.totalProjectCost;
+                acc.totalReceivedAmount += item.totalReceivedAmount;
+                return acc;
+            },
+            { completedTaskCount: 0, totalProjectCost: 0, totalReceivedAmount: 0 }
+        );
+
+        const totalCompletedTasks = (CompletedTaskAmountTeamLead?._count?._all ?? 0) + teamTotals.completedTaskCount;
+        const totalProjectCost = (CompletedTaskAmountTeamLead?._sum?.TotalProjectCost ?? 0) + teamTotals.totalProjectCost;
+        const totalReceivedAmount = (CompletedTaskAmountTeamLead?._sum?.TotalReceivedAmount ?? 0) + teamTotals.totalReceivedAmount;
+
+
+
+
+
+        console.log(list);
+        res.status(200).json({
+            success: true,
+            message: "Assign list fetched successfully",
+            totalCompletedTasks,
+            totalProjectCost,
+            totalReceivedAmount,
+            list,
+            user,
+            CompletedTaskAmountTeam,
+            CompletedTaskAmountTeamLead,
+            finalReport
+        });
+        return;
+    } catch (error) {
+        // console.error("Error in GetListUserAssign:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch user list",
+            error: (error as Error).message,
+        });
+        return;
+    }
+};
+
+
+
+
 
 export {getUserLogs,getAllUsers,logUserActivity,GetUser}
