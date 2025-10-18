@@ -812,7 +812,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                 where: {
                     isActive:true,
                     role: {
-                        in: ["HOS", "DIRECTOR","HR","AREAMANAGEROPS","ACCOUNTANT"], // adjust role values according to your schema
+                        in: ["HOS", "DIRECTOR","HR","AREAMANAGEROPS","ACCOUNTANT","SCP1","SCP2","TRAINEE"], // adjust role values according to your schema
                     },
                 },
                 select: {
@@ -828,7 +828,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                 where: {
                     isActive:true,
                     role: {
-                        in: ["HOS", "STATEHEAD","HR","AREAMANAGEROPS","ACCOUNTANT"], // adjust role values according to your schema
+                        in: ["HOS", "STATEHEAD","HR","AREAMANAGEROPS","ACCOUNTANT","SCP1","SCP2","TRAINEE"], // adjust role values according to your schema
                     },
                 },
                 select: {
@@ -845,7 +845,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                 where: {
                     isActive:true,
                     role: {
-                        in: ["SITESUPERVISOR", "STATEHEAD","HR","AREAMANAGER","ACCOUNTANT"], // adjust role values according to your schema
+                        in: ["SITESUPERVISOR", "STATEHEAD","HR","AREAMANAGER1","AREAMANAGER2","ACCOUNTANT","SCP1","SCP2","TRAINEE"], // adjust role values according to your schema
                     },
                 },
                 select: {
@@ -861,7 +861,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                 where: {
                     isActive:true,
                     role: {
-                        in: ["SITESUPERVISOR", "SCP1","SCP2","HR","AREAMANAGER","ACCOUNTANT"], // adjust role values according to your schema
+                        in: ["SITESUPERVISOR", "SCP1","SCP2","HR","AREAMANAGER1","AREAMANAGER2","ACCOUNTANT","TRAINEE"], // adjust role values according to your schema
                     },
                 },
                 select: {
@@ -873,12 +873,12 @@ export const UserListByRole=async (req:Request,res:Response)=>{
             });
         }
 
-        if (Role === "AREAMANAGER") {
+        if (Role === "AREAMANAGER1" || Role==="AREAMANAGER2") {
             users = await prisma.user.findMany({
                 where: {
                     isActive:true,
                     role: {
-                        in: ["SALESOFFICER", "CP1","CP2","SCP1","SCP2"], // adjust role values according to your schema
+                        in: ["SALESOFFICER", "CP1","CP2","SCP1","SCP2","TRAINEE"], // adjust role values according to your schema
                     },
                 },
                 select: {
@@ -890,12 +890,12 @@ export const UserListByRole=async (req:Request,res:Response)=>{
             });
         }
 
-        if (Role === "SCP2" || Role==="SCP2") {
+        if (Role === "SCP1" || Role==="SCP2") {
             users = await prisma.user.findMany({
                 where: {
                     isActive:true,
                     role: {
-                        in: [ "CP1","CP2"], // adjust role values according to your schema
+                        in: [ "CP1","CP2","TRAINEE"], // adjust role values according to your schema
                     },
                 },
                 select: {
