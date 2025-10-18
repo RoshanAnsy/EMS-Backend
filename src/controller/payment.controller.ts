@@ -339,7 +339,7 @@ export const UpdatePaymentReceiptSetting = async (req: CustomRequest, res: Respo
         }
 
 
-        const PaymentReceiptID='93d9ad4e-9cea-452b-a5a8-9e3ffa004ac5'
+        const PaymentReceiptID='9b31c069-b882-4c0c-bd91-9f1c61fe1b98'
         if(!PaymentReceiptID){
             res.status(401).json({
                 message:"PaymentReceiptID is missing ",
