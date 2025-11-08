@@ -44,6 +44,8 @@ enum Role {
   ACCOUNTANT
   SITESUPERVISOR
   HR
+  CP
+  SCP
   CP1
   CP2
   SCP1
