@@ -107,6 +107,7 @@ const getAllUsers = async (req: Request, res: Response): Promise<void> => {
                 name:true,
                 email:true,
                 role:true,
+                EmplyID:true,
             },
             skip: offset,
             take: limitNum,
@@ -191,7 +192,7 @@ export const UserList=async (req:Request,res:Response)=>{
                 name:true,
                 email:true,
                 role:true,
-                
+                EmplyID:true,
                 
             }
         });
@@ -510,9 +511,6 @@ export const AddNewUser=async (req:Request,res:Response):Promise<void> =>{
         });
     }
 
-
-
-
 }
 
 export const GetUserListForDropdown=async (req:Request,res:Response):Promise<void>=>{
@@ -524,6 +522,7 @@ export const GetUserListForDropdown=async (req:Request,res:Response):Promise<voi
             select:{
                 id:true,
                 name:true,
+                EmplyID:true,
             }
         });
         if(!users){
@@ -650,7 +649,8 @@ export const GetListUserOnRoleBased = async (req: CustomRequest, res: Response) 
             where:{role:Role as Role},
             select:{
                 id:true,
-                name:true
+                name:true,
+                EmplyID:true,
             }
         })
 
@@ -820,6 +820,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                     name: true,
                     email: true,
                     role: true,
+                    EmplyID:true,
                 },
             });
         }
@@ -836,6 +837,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                     name: true,
                     email: true,
                     role: true,
+                    EmplyID:true,
                 },
             });
         }
@@ -853,6 +855,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                     name: true,
                     email: true,
                     role: true,
+                    EmplyID:true,
                 },
             });
         }
@@ -869,6 +872,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                     name: true,
                     email: true,
                     role: true,
+                    EmplyID:true,
                 },
             });
         }
@@ -886,6 +890,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                     name: true,
                     email: true,
                     role: true,
+                    EmplyID:true,
                 },
             });
         }
@@ -903,6 +908,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                     name: true,
                     email: true,
                     role: true,
+                    EmplyID:true,
                 },
             });
         }
