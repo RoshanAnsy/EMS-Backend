@@ -50,6 +50,8 @@ enum Role {
   CP2
   SCP1
   SCP2
+  ACP1
+  ACP
 TRAINEE
 }
  

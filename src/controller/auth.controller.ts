@@ -325,4 +325,106 @@ export const UpdatePassWord=async (req:CustomRequest,res:Response):Promise<void>
 
 
 }
+
+
+export const ResetPassWord=async (req:CustomRequest,res:Response):Promise<void> =>{
+        
+    try{
+       
+        const {password,conformPassword}:signUpTypes=req.body;
+        const UserID = req.userId;
+        // console.log("Role value",roleValue);
+        // validate the data
+        if(!password ||!conformPassword){
+            res.status(400).json({
+                success: false,
+                error: "Please fill all fields"
+            });
+            return;
+        }
+
+
+        if(!UserID){
+            res.status(400).json({
+                success: false,
+                message: "YOU ARE NOT AUTHORIZED TO CHANGE PASSWORD"
+            });
+            return;
+        }
+    
+        const zodResponse=passwordUpdateZodSchema.safeParse({password,conformPassword});
+        if(!zodResponse.success){
+            res.status(400).json({
+                success: false,
+                error: JSON.parse(zodResponse.error.message)
+            });
+            return;
+        }
+
+    
+        //verify password and confirm password
+        if(password!== conformPassword){
+            res.status(400).json({
+                success: false,
+                error: "Passwords and conformPassword did not matched"
+            });
+            return;
+        }
+    
+        // hash password
+        const hashedPassword=await bcrypt.hash(password,Number(process.env.ROUND));
+        if(!hashedPassword){
+            res.status(403).json({
+                success: false,
+                error: "Error hashing password"
+            });
+            return;
+        }
+
+        const userExit=await prisma.user.findFirst({
+            where:{id:UserID}
+        })
+
+        if(!userExit){
+            res.status(404).json({
+                success: false,
+                error: "User not found"
+            });
+            return;
+        }
+
+        const updatePassword= await prisma.user.update({
+            where:{id:UserID},
+            data:{password:hashedPassword}
+        })
+    
+        // const createUser=await prisma.user.create({
+        //     data:{
+        //         name,email,password:hashedPassword,role:Role[roleValue],EmplyID,
+        //     }
+        // })
+        if(!updatePassword){
+            res.status(404).json({
+                success: false,
+                error: "Error creating user"
+            });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            message: "Password update successfully",
+            updatePassword,
+        })
+    }
+    catch(error){
+        res.status(500).json({
+            success: false,
+            error: error
+        });
+    }
+
+
+
+
+}
 export {signUp,login,logout} 

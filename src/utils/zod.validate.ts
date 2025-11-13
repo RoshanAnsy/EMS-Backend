@@ -13,7 +13,7 @@ export const passwordUpdateZodSchema=z.object({
     
     password:z.string().min(8),
     conformPassword:z.string().min(8),
-    EmplyID:z.string().min(4),
+    EmplyID:z.string().min(4).optional(),
 })
 
 export const loginZodSchema=z.object({

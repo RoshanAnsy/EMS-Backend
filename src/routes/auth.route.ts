@@ -1,5 +1,5 @@
 import express from 'express';
-import { signUp,login,logout,UpdatePassWord } from '../controller/auth.controller';
+import { signUp,login,logout,UpdatePassWord,ResetPassWord } from '../controller/auth.controller';
 import { authorization,checkAuth } from '../middleware/auth.middleware';
 
 
@@ -11,4 +11,5 @@ router.post('/login',login);
 router.get('/logout',authorization,logout);
 router.get('/checkAuth',checkAuth)
 router.post('/updatePassword',authorization,UpdatePassWord);
+router.post('/ResetPassWord',authorization,ResetPassWord);
 export default router;
