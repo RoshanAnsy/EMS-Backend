@@ -882,7 +882,7 @@ export const UserListByRole=async (req:Request,res:Response)=>{
                 where: {
                     isActive:true,
                     role: {
-                        in: ["SALESOFFICER", "CP","SCP","CP1","CP2","SCP1","SCP2","TRAINEE"], // adjust role values according to your schema
+                        in: ["SALESOFFICER", "CP","SCP","CP1","CP2","ACP1","ACP","SCP1","SCP2","TRAINEE"], // adjust role values according to your schema
                     },
                 },
                 select: {
